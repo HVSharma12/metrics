@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+# Assisted by Claude Code using model(s) Claude Opus 5.5
+---
+- name: Install the NVIDIA and AMD GPU agents for PCP
+  hosts: monitoring
+
+  roles:
+    - role: linux-system-roles.metrics
+      vars:
+        metrics_provider: pcp
+        # drop amdgpu where pcp-pmda-amdgpu is not packaged
+        metrics_optional_domains: [nvidia, amdgpu]
+        metrics_optional_packages: [pcp-pmda-nvidia-gpu, pcp-pmda-amdgpu]

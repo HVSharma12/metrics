@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: MIT
+# Assisted by Claude Code using model(s) Claude Opus 5.5
+---
+- name: Test that the GPU PMDAs are installed and registered
+  hosts: all
+  vars:
+    metrics_optional_domains: "{{ __test_gpu_domains }}"
+    metrics_optional_packages: "{{ __test_gpu_domains |
+      map('extract', __test_gpu_packages) | list }}"
+    __test_gpu_packages:
+      nvidia: pcp-pmda-nvidia-gpu
+      amdgpu: pcp-pmda-amdgpu
+
+  pre_tasks:
+    - name: Stop test
+      meta: end_host
+      when: ansible_facts['distribution'] in ['RedHat', 'CentOS'] and
+        ansible_facts['distribution_major_version'] | int < 8
+
+    # amdgpu is checked on CentOS Stream 9 and later, Fedora and SLES 16.1 and later
+    - name: Set the GPU PMDAs to test
+      set_fact:
+        __test_gpu_domains: "{{ ['nvidia', 'amdgpu']
+          if (ansible_facts['distribution'] == 'CentOS' and
+              ansible_facts['distribution_major_version'] | int >= 9) or
+             ansible_facts['distribution'] == 'Fedora' or
+             (ansible_facts['distribution'] == 'SLES' and
+              ansible_facts['distribution_version'] is version('16.1', '>='))
+          else ['nvidia'] }}"
+
+    - name: Save state of services
+      import_tasks: get_services_state.yml
+
+  tasks:
+    - name: Run test
+      block:
+        - name: Run the role
+          include_tasks: tasks/run_role_with_clear_facts.yml
+          vars:
+            __sr_public: true
+
+        - name: Flush handlers
+          meta: flush_handlers
+
+        - name: Check if PCP works
+          include_tasks: check_pcp.yml
+
+        # pmprobe, not pminfo: it prints the value count, so the agent itself must answer
+        - name: Check that each GPU PMDA answers for its card count
+          command: pmprobe {{ item }}.numcards
+          register: __test_numcards
+          until: __test_numcards.stdout.split() | last == '1'
+          retries: 10
+          delay: 1
+          changed_when: false
+          loop: "{{ __test_gpu_domains }}"
+          when: __metrics_is_booted | bool
+
+      rescue:
+        - name: Handle failure case
+          include_tasks: handle_test_failure.yml
+
+      always:
+        - name: Restore state of services
+          import_tasks: restore_services_state.yml

@@ -1,3 +1,4 @@
 cyrus-sasl-lib
 pcp
 pcp-pmda-apache
+pcp-pmda-nvidia-gpu
