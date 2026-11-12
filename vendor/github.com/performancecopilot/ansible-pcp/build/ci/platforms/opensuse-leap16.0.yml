@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+---
+name: openSUSE Leap 16.0
+base_image: registry.opensuse.org/opensuse/leap:16.0
+groups:
+  - all
+  - pr
+skip:
+  # The distribution perl-PCP-PMDA 6.2.0 cannot load its PMDA.so (undefined
+  # symbol pmdaFetch), so the postfix agent does not install.
+  tests_verify_postfix.yml: perl-PCP-PMDA cannot load PMDA.so
+  # The repository role has no vars/Suse.yml, so its tasks fail on undefined
+  # variables.  Remove this entry once the role supports openSUSE.
+  tests_verify_repository.yml: repository role has no openSUSE support
