@@ -2,7 +2,7 @@
 ### REQUIRED
 namespace: performancecopilot
 name: metrics
-version: 2.4.2
+version: 2.5.0
 readme: README.md
 authors:
   - Jan Kurik <jkurik@redhat.com>
@@ -33,6 +33,7 @@ tags:
   - redis
   - pcp
 build_ignore:
+  - .ansible
   - .ansible-lint
   - .github
   - .gitignore
@@ -40,6 +41,7 @@ build_ignore:
   - .yamllint.yml
   - .yamllint_defaults.yml
   - ansible_pytest_extra_requirements.txt
+  - build
   - custom_requirements.txt
   - molecule_extra_requirements.txt
   - pylint_extra_requirements.txt
@@ -49,3 +51,4 @@ build_ignore:
 
 dependencies:
   ansible.posix: '*'  # for rpm-ostree
+  community.general: '*'  # for zypper
